@@ -258,13 +258,30 @@ async function play(title){
   for(let i=0;i<3;i++){
     if(!devId||i>0){await findDevice();if(!devId){await sleep(1500);continue}}
     try{
-      const r=await api('PUT','/me/player/play?device_id='+encodeURIComponent(devId),{uris:[u.u],position_ms:toMs(startOf(title))});
-      if(r.ok)return true;
+      const pos=toMs(startOf(title));
+      const r=await api('PUT','/me/player/play?device_id='+encodeURIComponent(devId),{uris:[u.u],position_ms:pos});
+      if(r.ok){if(pos>0)await ensurePosition(u.u,pos);return true}
       if(r.status===403){say('msg','Spotify rechaza la orden. Comprueba que la cuenta es Premium.',1);return false}
       if(r.status===404){devId=null;await sleep(800);continue}
     }catch(e){if(!tok)return false;await sleep(800)}
   }
   say('msg',NO_DEV,1);return false;
+}
+/* Spotify a veces ignora position_ms (sobre todo con el móvil recién activado): se comprueba y se corrige */
+async function ensurePosition(uri,pos){
+  for(let i=0;i<4;i++){
+    await sleep(i?500:700);
+    try{
+      const r=await api('GET','/me/player');
+      if(r.status!==200)continue;
+      const s=await r.json();
+      if(!s.item||s.item.uri!==uri)continue;              // aún no ha cambiado de canción
+      if(Math.abs(s.progress_ms-pos)<=2500)return;         // ya está donde toca
+      await api('PUT','/me/player/seek?'+new URLSearchParams({position_ms:String(pos),device_id:devId}));
+      return;
+    }catch(e){return}
+  }
+  try{await api('PUT','/me/player/seek?'+new URLSearchParams({position_ms:String(pos),device_id:devId}))}catch(e){}
 }
 async function pause(){if(!tok)return;try{await api('PUT','/me/player/pause'+(devId?'?device_id='+encodeURIComponent(devId):''))}catch(e){}}
 

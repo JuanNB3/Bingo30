@@ -1,7 +1,7 @@
 /* Bingo musical — service worker
    Red primero con 3 s de límite; si el servidor no responde (p. ej. bloqueo de Cloudflare)
    se sirve la copia guardada. Solo toca archivos de esta web y la fuente; Spotify va directo. */
-const VERSION = 'v4';
+const VERSION = 'v5';
 const CACHE = 'bingo30-' + VERSION;
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
