@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E0218A">
+<title>Bingo musical</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bingo30">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1FB; --ink:#17203B; --soft:#5B6485; --card:#FFFFFF; --line:#D5DBEE;
+  --ball:#FFD23F; --hot:#E0218A; --ok:#1E9E62; --no:#C8323C; --sp:#1DB954;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12172A; --ink:#EEF1FB; --soft:#9AA3C4; --card:#1C2340; --line:#2E3760;
+  --ball:#FFD23F; --hot:#FF4FA8; --ok:#3CCB86; --no:#FF6B73;}}
+:root[data-theme="dark"]{--bg:#12172A; --ink:#EEF1FB; --soft:#9AA3C4; --card:#1C2340; --line:#2E3760; --ball:#FFD23F; --hot:#FF4FA8; --ok:#3CCB86; --no:#FF6B73;}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:560px;margin:0 auto;padding:16px 16px 48px}
+h1{font-size:1.5rem;font-weight:800;margin:4px 0 12px;letter-spacing:-.01em}
+h2{font-size:1.15rem;font-weight:800;margin:0 0 10px}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:16px}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:10px 14px;font-weight:500}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--hot);outline-offset:2px}
+button.primary{background:var(--hot);border-color:var(--hot);color:#fff;font-weight:800;font-size:1.1rem;padding:14px 18px;width:100%}
+button.spot{background:var(--sp);border-color:var(--sp);color:#fff;font-weight:800}
+button:disabled{opacity:.45;cursor:default}
+.conn{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.conn .dot{width:10px;height:10px;border-radius:50%;background:var(--no);flex:0 0 10px}
+.conn .dot.on{background:var(--sp)}
+.conn .txt{flex:1;min-width:160px;font-size:.92rem}
+.conn .txt small{display:block;color:var(--soft)}
+.devs{display:grid;gap:6px;margin-top:8px}
+.devs button{text-align:left;background:var(--card)}
+.devs small{display:block;color:var(--soft);font-size:.8rem}
+.stage{display:flex;gap:16px;align-items:center;margin:14px 0}
+.ball{flex:0 0 108px;height:108px;border-radius:50%;background:var(--ball);color:#17203B;display:grid;place-items:center;position:relative;box-shadow:inset -8px -10px 0 rgba(0,0,0,.08)}
+.ball svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.ball circle{fill:none;stroke-width:7}
+.ball .track{stroke:rgba(0,0,0,.08)}
+.ball .prog{stroke:var(--hot);stroke-linecap:round;transition:stroke-dashoffset .25s linear}
+.ball b{font-size:2.1rem;font-weight:800;line-height:1}
+.ball small{display:block;font-size:.72rem;text-align:center;margin-top:2px}
+.now{min-width:0}
+.now .t{font-size:1.45rem;font-weight:800;line-height:1.15}
+.now .a{color:var(--soft);font-size:.95rem}
+.now .st{margin-top:8px;font-size:1rem}
+.now .st strong{background:var(--ball);color:#17203B;padding:1px 8px;border-radius:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1}
+.dur{display:flex;align-items:center;gap:10px;margin-top:12px;color:var(--soft);font-size:.9rem}
+.dur input{flex:1;accent-color:var(--hot)}
+.played{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.played li{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.85rem}
+.played li span{color:var(--soft);margin-right:4px}
+.alert{border-left:4px solid var(--hot);padding:8px 12px;background:var(--bg);border-radius:8px;margin-top:12px;font-size:.92rem}
+.alert.err{border-color:var(--no)}
+.check{display:flex;gap:8px}
+.check input{width:90px;font:inherit;font-size:1.2rem;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+.cell{border:1px solid var(--line);border-radius:10px;padding:10px 6px;min-height:64px;display:grid;place-items:center;text-align:center;font-size:.85rem;font-weight:500;line-height:1.2}
+.cell.on{background:var(--ball);color:#17203B;border-color:var(--ball);font-weight:800}
+.cell.win{outline:3px solid var(--ok);outline-offset:-3px}
+.verdict{margin-top:12px;font-weight:800;font-size:1.15rem}
+.verdict.ok{color:var(--ok)} .verdict.no{color:var(--no)}
+.verdict small{display:block;font-weight:500;font-size:.9rem;color:var(--soft)}
+details summary{cursor:pointer;font-weight:800;font-size:1.15rem}
+.list{margin-top:12px;display:grid;gap:8px}
+.item{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:8px;font-size:.92rem}
+.item .nm{min-width:0}
+.item .nm small{display:block;color:var(--soft);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .nm small.miss{color:var(--no)}
+.item input{width:64px;font:inherit;text-align:center;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.item button{padding:6px 10px;min-width:44px}
+.item select{grid-column:1/-1;font:inherit;font-size:.85rem;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);max-width:100%}
+.note{color:var(--soft);font-size:.85rem;margin:8px 0 0}
+pre{white-space:pre-wrap;word-break:break-all;font-size:.75rem;background:var(--bg);padding:8px;border-radius:8px}
+.foot{display:flex;gap:8px;margin-top:4px}
+@media (prefers-reduced-motion:reduce){.ball .prog{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>Bingo musical</h1>
+
+<section>
+  <div class="conn">
+    <span class="dot" id="dot"></span>
+    <div class="txt" id="connTxt">Sin conectar a Spotify</div>
+    <button class="spot" id="login">Conectar</button>
+    <button id="findDev" hidden>Cambiar</button>
+  </div>
+  <div id="connMsg"></div>
+</section>
+
+<section aria-live="polite">
+  <button class="primary" id="next">Siguiente canción</button>
+  <div class="stage">
+    <div class="ball" aria-label="Temporizador">
+      <svg viewBox="0 0 108 108"><circle class="track" cx="54" cy="54" r="48"/><circle class="prog" id="prog" cx="54" cy="54" r="48"/></svg>
+      <div><b id="secs">20</b><small id="count">0 de 20</small></div>
+    </div>
+    <div class="now" id="now">
+      <div class="t">Aún no ha sonado nada</div>
+      <div class="a">La primera canción sale al azar.</div>
+    </div>
+  </div>
+  <div class="row">
+    <button id="timer" disabled>Reproducir</button>
+    <button id="undo" disabled>Deshacer</button>
+  </div>
+  <div class="dur"><span>Duración</span><input type="range" id="dur" min="10" max="30" step="5" value="20"><span id="durv">20 s</span></div>
+  <div id="msg"></div>
+  <div id="alerts"></div>
+</section>
+
+<section>
+  <h2>Comprobar papeleta</h2>
+  <div class="check">
+    <input id="num" type="number" inputmode="numeric" min="1" max="25" placeholder="Nº" aria-label="Número de papeleta">
+    <button id="chkLine">Línea</button>
+    <button id="chkBingo">Bingo</button>
+  </div>
+  <div id="result"></div>
+</section>
+
+<section>
+  <h2>Han sonado</h2>
+  <ul class="played" id="played"><li>Ninguna todavía</li></ul>
+</section>
+
+<section>
+  <details id="setup">
+    <summary>Preparar canciones</summary>
+    <p class="note">Enlaza cada canción con Spotify y ajusta el segundo de arranque. Con ▶ suena 10 s desde ese punto. Todo se guarda en este móvil.</p>
+    <div class="row" style="margin-top:10px">
+      <button id="searchAll">Buscar las que faltan</button>
+      <button id="copy">Copiar lista</button>
+    </div>
+    <div id="setupMsg"></div>
+    <div class="list" id="list"></div>
+  </details>
+</section>
+
+<div class="foot"><button id="reset">Nueva partida</button><button id="logout" hidden>Desconectar Spotify</button></div>
+<p class="note" id="ver">Versión 4</p>
+</main>
+
+<script>
+/* ---------- Configuración ---------- */
+const CLIENT_ID='92a1822335d944d2bf7d5e1401c2e606';
+const REDIRECT=location.origin+location.pathname.replace(/index\.html$/,'');
+const SCOPES='user-modify-playback-state user-read-playback-state';
+const TEST_SECS=10;
+
+/* URIs y segundos de inicio fijados en código (versión afinada) */
+const FIXED_URIS={"Zapatillas": {"u": "spotify:track:42VgiRyg0YjtRVLiPFNxPJ", "n": "Zapatillas — El Canto Del Loco (Zapatillas)"}, "La Flaca": {"u": "spotify:track:2LsbizbOeNa4x6qsi2jAMb", "n": "La flaca — Jarabe De Palo (La Flaca)"}, "Princesas": {"u": "spotify:track:3hlWUNjAlbZ6nOjAbrivBv", "n": "Princesas — Pereza (Animales)"}, "Por la boca vive el pez": {"u": "spotify:track:24UStI5AYA7g5ufFDh3LH0", "n": "Por la boca vive el pez — Fito y Fitipaldis (Por la boca vive el pez)"}, "Rosas": {"u": "spotify:track:4waqcUQWdj0yH26STWl2Rq", "n": "Rosas — La Oreja de Van Gogh (Lo Que Te Conte Mientras Te Hacias La Dormida)"}, "A quién le importa": {"u": "spotify:track:7Eb5AYiiGWItBNddlmxvnh", "n": "A quién le importa — Alaska Y Dinarama (No Es Pecado -Remasters)"}, "Gasolina": {"u": "spotify:track:5YoITs1m0q8UOQ4AW7N5ga", "n": "Gasolina — Daddy Yankee (Barrio Fino (Bonus Track Version))"}, "Danza Kuduro": {"u": "spotify:track:2a1o6ZejUi8U3wzzOtCOYw", "n": "Danza Kuduro — Don Omar, Lucenzo (Meet The Orphans)"}, "Despacito": {"u": "spotify:track:6habFhsOp2NvshLv26DqMb", "n": "Despacito — Luis Fonsi, Daddy Yankee (VIDA)"}, "Taki Taki": {"u": "spotify:track:4w8niZpiMy6qz1mntFA5uM", "n": "Taki Taki (with Selena Gomez, Ozuna & Cardi B) — DJ Snake, Selena Gomez, Ozuna, Cardi B"}, "La Graciosa": {"u": "spotify:track:0b3Bkp0UfCkNqquAUmoP5m", "n": "LA GRACIOSA — Quevedo, Elvis Crespo (LA GRACIOSA)"}, "Felices los 4": {"u": "spotify:track:1RouRzlg8OKFeqc6LvdxmB", "n": "Felices los 4 — Maluma (F.A.M.E.)"}, "Bohemian Rhapsody": {"u": "spotify:track:2JiDi0qAXsPwhPqA2qaKGt", "n": "Bohemian Rhapsody — Queen (A Night At The Opera)"}, "Seven Nation Army": {"u": "spotify:track:3dPQuX8Gs42Y7b454ybpMR", "n": "Seven Nation Army — The White Stripes (Elephant)"}, "Don't Stop Me Now": {"u": "spotify:track:1NHWG8zxSEypSRF3UufrnO", "n": "Don't Stop Me Now — Queen (Jazz)"}, "It's My Life": {"u": "spotify:track:0v1XpBHnsbkCn7iJ9Ucr1l", "n": "It's My Life — Bon Jovi (Crush)"}, "Dancing Queen": {"u": "spotify:track:0GjEhVFGZW8afUYGChu3Rr", "n": "Dancing Queen — ABBA (Arrival)"}, "Macarena": {"u": "spotify:track:4Y6cDd4EPHcEbiUKdyvNwM", "n": "Macarena — Los Del Rio (A Mi Me Gusta)"}, "Aserejé": {"u": "spotify:track:6NG2IIXZfC5Notpz0GIODU", "n": "The Ketchup Song (Aserejé) - Spanish Version — Las Ketchup"}, "Freed From Desire": {"u": "spotify:track:3u5N55tHf7hXATSQrjBh2q", "n": "Freed From Desire — Gala, Molella, Phil Jay (Come Into My Life (The Album))"}};
+
+const SONGS=[{"t": "Zapatillas", "a": "El Canto del Loco", "s": "0:30"}, {"t": "La Flaca", "a": "Jarabe de Palo", "s": "0:40"}, {"t": "Princesas", "a": "Pereza", "s": "0:45"}, {"t": "Por la boca vive el pez", "a": "Fito & Fitipaldis", "s": "0:40"}, {"t": "Rosas", "a": "La Oreja de Van Gogh", "s": "0:40"}, {"t": "A quién le importa", "a": "Alaska y Dinarama", "s": "0:30"}, {"t": "Gasolina", "a": "Daddy Yankee", "s": "0:15"}, {"t": "Danza Kuduro", "a": "Don Omar & Lucenzo", "s": "0:30"}, {"t": "Despacito", "a": "Luis Fonsi & Daddy Yankee", "s": "1:07"}, {"t": "Taki Taki", "a": "DJ Snake, Selena Gomez, Ozuna & Cardi B", "s": "0:10"}, {"t": "La Graciosa", "a": "Quevedo", "s": "0:00"}, {"t": "Felices los 4", "a": "Maluma", "s": "0:40"}, {"t": "Bohemian Rhapsody", "a": "Queen", "s": "0:45"}, {"t": "Seven Nation Army", "a": "The White Stripes", "s": "0:00"}, {"t": "Don't Stop Me Now", "a": "Queen", "s": "0:32"}, {"t": "It's My Life", "a": "Bon Jovi", "s": "0:25"}, {"t": "Dancing Queen", "a": "ABBA", "s": "0:00"}, {"t": "Macarena", "a": "Los del Río", "s": "0:05"}, {"t": "Aserejé", "a": "Las Ketchup", "s": "0:10"}, {"t": "Freed From Desire", "a": "Gala", "s": "0:00"}];
+const CARDS={"1": ["La Graciosa", "Felices los 4", "Rosas", "Gasolina", "Danza Kuduro", "Princesas", "Bohemian Rhapsody", "Por la boca vive el pez", "Despacito"], "2": ["It's My Life", "Princesas", "A quién le importa", "Por la boca vive el pez", "Don't Stop Me Now", "Rosas", "Seven Nation Army", "Despacito", "Danza Kuduro"], "3": ["Dancing Queen", "Aserejé", "Rosas", "Danza Kuduro", "La Flaca", "Por la boca vive el pez", "Taki Taki", "Gasolina", "Bohemian Rhapsody"], "4": ["Don't Stop Me Now", "Princesas", "Gasolina", "Taki Taki", "Seven Nation Army", "Por la boca vive el pez", "Dancing Queen", "Danza Kuduro", "La Graciosa"], "5": ["La Graciosa", "La Flaca", "Zapatillas", "Danza Kuduro", "Taki Taki", "Macarena", "Freed From Desire", "Felices los 4", "Despacito"], "6": ["Felices los 4", "Despacito", "Don't Stop Me Now", "La Graciosa", "Zapatillas", "Dancing Queen", "Macarena", "It's My Life", "Danza Kuduro"], "7": ["A quién le importa", "La Flaca", "Don't Stop Me Now", "Macarena", "La Graciosa", "Dancing Queen", "Freed From Desire", "Por la boca vive el pez", "Despacito"], "8": ["Gasolina", "La Flaca", "Bohemian Rhapsody", "Danza Kuduro", "A quién le importa", "Don't Stop Me Now", "Zapatillas", "Felices los 4", "Freed From Desire"], "9": ["Gasolina", "Don't Stop Me Now", "Despacito", "Danza Kuduro", "Taki Taki", "Princesas", "Seven Nation Army", "Bohemian Rhapsody", "Macarena"], "10": ["Princesas", "Macarena", "Freed From Desire", "Aserejé", "Seven Nation Army", "Zapatillas", "Dancing Queen", "A quién le importa", "It's My Life"], "11": ["Princesas", "Aserejé", "La Flaca", "Felices los 4", "Seven Nation Army", "Gasolina", "Freed From Desire", "Dancing Queen", "Rosas"], "12": ["Danza Kuduro", "Aserejé", "Bohemian Rhapsody", "Por la boca vive el pez", "Rosas", "Taki Taki", "Seven Nation Army", "A quién le importa", "It's My Life"], "13": ["Macarena", "Taki Taki", "It's My Life", "Zapatillas", "Por la boca vive el pez", "La Graciosa", "Bohemian Rhapsody", "Princesas", "Danza Kuduro"], "14": ["Despacito", "A quién le importa", "Aserejé", "La Flaca", "Felices los 4", "Seven Nation Army", "Freed From Desire", "Princesas", "Zapatillas"], "15": ["Aserejé", "Rosas", "Dancing Queen", "Zapatillas", "Don't Stop Me Now", "La Graciosa", "Despacito", "Seven Nation Army", "Taki Taki"], "16": ["La Flaca", "La Graciosa", "Felices los 4", "Macarena", "Rosas", "A quién le importa", "It's My Life", "Freed From Desire", "Princesas"], "17": ["Felices los 4", "Zapatillas", "It's My Life", "La Flaca", "Por la boca vive el pez", "Macarena", "Freed From Desire", "Despacito", "Aserejé"], "18": ["Don't Stop Me Now", "Dancing Queen", "Freed From Desire", "Rosas", "La Graciosa", "Bohemian Rhapsody", "It's My Life", "Gasolina", "Taki Taki"], "19": ["Aserejé", "Danza Kuduro", "Don't Stop Me Now", "Zapatillas", "A quién le importa", "Felices los 4", "La Graciosa", "Dancing Queen", "Gasolina"], "20": ["Por la boca vive el pez", "A quién le importa", "La Flaca", "Aserejé", "Don't Stop Me Now", "Macarena", "Seven Nation Army", "Rosas", "La Graciosa"], "21": ["Taki Taki", "It's My Life", "La Flaca", "Aserejé", "Zapatillas", "Bohemian Rhapsody", "Rosas", "Freed From Desire", "Gasolina"], "22": ["Taki Taki", "Zapatillas", "Aserejé", "Felices los 4", "Bohemian Rhapsody", "Por la boca vive el pez", "A quién le importa", "Princesas", "Despacito"], "23": ["It's My Life", "Freed From Desire", "Seven Nation Army", "Gasolina", "Macarena", "Don't Stop Me Now", "Felices los 4", "Princesas", "Por la boca vive el pez"], "24": ["Despacito", "La Flaca", "Dancing Queen", "Bohemian Rhapsody", "Princesas", "Taki Taki", "Por la boca vive el pez", "A quién le importa", "Rosas"], "25": ["Dancing Queen", "Bohemian Rhapsody", "La Flaca", "Rosas", "Gasolina", "Macarena", "Seven Nation Army", "Zapatillas", "It's My Life"]};
+
+/* ---------- Utilidades ---------- */
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toMs=v=>{const m=/^(\d{1,2}):(\d{2})$/.exec(v||'');return m?(+m[1]*60+ +m[2])*1000:0};
+const song=t=>SONGS.find(s=>s.t===t);
+
+let starts=store.get('starts',{}), played=store.get('played',[]), dur=store.get('dur',20);
+let uris=Object.assign({},FIXED_URIS,store.get('uris',{}));      // título -> {u:uri, n:"nombre — artista"}
+let tok=store.get('tok',null), devId=store.get('dev',null), devName=store.get('devName','');
+const startOf=t=>starts[t]||song(t).s;
+const NO_DEV='No encuentro Spotify en el móvil. Abre la app de Spotify, dale a play y pausa una vez, vuelve aquí y pulsa otra vez.';
+
+function say(el,txt,err){$(el).innerHTML=txt?`<div class="alert${err?' err':''}">${txt}</div>`:''}
+
+/* ---------- OAuth PKCE ---------- */
+function rnd(n){const a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,b=>('0'+b.toString(16)).slice(-2)).join('')}
+async function challenge(v){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));
+  return btoa(String.fromCharCode(...new Uint8Array(d))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+const ALLOWED=['https://bingo30.jnb1096.workers.dev/','https://juannb3.github.io/bingo30/'];
+async function login(){
+  if(!ALLOWED.includes(REDIRECT)){say('connMsg','Conectar solo funciona desde '+ALLOWED.map(u=>`<a href="${u}">${u.replace('https://','')}</a>`).join(' o ')+'. Estás en '+esc(location.href.split('?')[0])+'.',1);return}
+  if(!window.crypto||!crypto.subtle){say('connMsg','Esta página tiene que abrirse por https para conectar con Spotify.',1);return}
+  const v=rnd(48),st=rnd(8);store.set('pkce',{v,st});
+  location.href='https://accounts.spotify.com/authorize?'+new URLSearchParams({client_id:CLIENT_ID,response_type:'code',redirect_uri:REDIRECT,scope:SCOPES,code_challenge_method:'S256',code_challenge:await challenge(v),state:st});
+}
+async function tokenReq(params){
+  const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:CLIENT_ID,...params})});
+  if(!r.ok)throw new Error('token');
+  const j=await r.json();
+  tok={a:j.access_token,r:j.refresh_token||(tok&&tok.r),e:Date.now()+(j.expires_in-60)*1000};store.set('tok',tok);
+}
+async function handleRedirect(){
+  const p=new URLSearchParams(location.search);
+  if(!p.has('code')&&!p.has('error'))return;
+  history.replaceState(null,'',REDIRECT);
+  if(p.has('error')){say('connMsg','Spotify no dio permiso ('+esc(p.get('error'))+').',1);return}
+  const pk=store.get('pkce',null);store.set('pkce',null);
+  if(!pk||pk.st!==p.get('state')){say('connMsg','El inicio de sesión no cuadra. Vuelve a pulsar Conectar.',1);return}
+  try{await tokenReq({grant_type:'authorization_code',code:p.get('code'),redirect_uri:REDIRECT,code_verifier:pk.v})}
+  catch(e){say('connMsg','No pude completar el inicio de sesión. Vuelve a pulsar Conectar.',1)}
+}
+function logout(){tok=null;devId=null;devName='';store.set('tok',null);store.set('dev',null);store.set('devName',null);renderConn()}
+async function access(){
+  if(!tok)throw new Error('nologin');
+  if(Date.now()>tok.e){try{await tokenReq({grant_type:'refresh_token',refresh_token:tok.r})}catch(e){logout();say('connMsg','La sesión de Spotify ha caducado. Pulsa Conectar.',1);throw e}}
+  return tok.a;
+}
+async function api(method,path,body,retry=true){
+  const a=await access();
+  const r=await fetch('https://api.spotify.com/v1'+path,{method,headers:Object.assign({Authorization:'Bearer '+a},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined});
+  if(r.status===401&&retry){tok.e=0;return api(method,path,body,false)}
+  if(r.status===429&&retry){await sleep(((+r.headers.get('Retry-After'))||2)*1000);return api(method,path,body,false)}
+  return r;
+}
+
+/* ---------- Dispositivo y reproducción ---------- */
+async function getDevices(){
+  try{const r=await api('GET','/me/player/devices');if(!r.ok)return [];const j=await r.json();return j.devices||[]}catch(e){return []}
+}
+function choose(d){devId=d.id;devName=d.name;store.set('dev',devId);store.set('devName',devName);say('connMsg','');renderConn()}
+/* Solo usa el dispositivo que has elegido tú. Nunca salta a otro por su cuenta. */
+async function findDevice(){
+  const list=await getDevices();
+  if(devName){
+    const d=list.find(x=>x.id===devId)||list.find(x=>x.name===devName);
+    if(d){if(d.id!==devId)choose(d);return d}
+    devId=null;renderConn();return null;          // tu móvil no aparece: hay que abrir Spotify en él
+  }
+  devId=null;
+  if(list.length===1){choose(list[0]);return list[0]}
+  showPicker(list);return null;
+}
+async function showPicker(list){
+  list=list||await getDevices();
+  if(!list.length){say('connMsg',NO_DEV,1);return}
+  $('connMsg').innerHTML='<div class="alert">¿Dónde tiene que sonar? Elige tu móvil:<div class="devs">'+
+    list.map((d,i)=>`<button data-dev="${i}">${esc(d.name)}<small>${esc(d.type)}${d.is_active?' · activo':''}</small></button>`).join('')+
+    '</div><p class="note">Si tu móvil no sale, abre Spotify en él, dale a play y pausa, y pulsa "Cambiar" otra vez.</p></div>';
+  $('connMsg').querySelectorAll('[data-dev]').forEach(b=>b.onclick=()=>choose(list[+b.dataset.dev]));
+}
+async function play(title){
+  const u=uris[title];
+  if(!tok){say('msg','Conecta con Spotify para que suene sola (arriba).',1);return false}
+  if(!u){say('msg','Esta canción aún no está enlazada con Spotify. Hazlo en "Preparar canciones".',1);return false}
+  say('msg','');
+  if(!devName){await findDevice();if(!devId){say('msg','Primero elige en qué móvil suena (arriba).',1);return false}}
+  for(let i=0;i<3;i++){
+    if(!devId||i>0){await findDevice();if(!devId){await sleep(1500);continue}}
+    try{
+      const r=await api('PUT','/me/player/play?device_id='+encodeURIComponent(devId),{uris:[u.u],position_ms:toMs(startOf(title))});
+      if(r.ok)return true;
+      if(r.status===403){say('msg','Spotify rechaza la orden. Comprueba que la cuenta es Premium.',1);return false}
+      if(r.status===404){devId=null;await sleep(800);continue}
+    }catch(e){if(!tok)return false;await sleep(800)}
+  }
+  say('msg',NO_DEV,1);return false;
+}
+async function pause(){if(!tok)return;try{await api('PUT','/me/player/pause'+(devId?'?device_id='+encodeURIComponent(devId):''))}catch(e){}}
+
+/* ---------- Pantalla encendida ---------- */
+let lock=null;
+async function keepAwake(){try{if('wakeLock' in navigator&&!lock&&document.visibilityState==='visible'){lock=await navigator.wakeLock.request('screen');lock.addEventListener('release',()=>lock=null)}}catch(e){}}
+
+/* ---------- Temporizador ---------- */
+const C=2*Math.PI*48; $('prog').style.strokeDasharray=C;
+let timer=null,endAt=0,left=dur,actx=null,testing=null,busy=false;
+function beep(f,ms){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.25,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+ms/1000);o.start();o.stop(actx.currentTime+ms/1000)}catch(e){}}
+function setRing(){$('secs').textContent=left;$('prog').style.strokeDashoffset=C*(1-left/dur)}
+function stopTimer(){clearInterval(timer);timer=null;$('timer').textContent=played.length?'Repetir':'Reproducir'}
+function tick(){
+  const l=Math.max(0,Math.ceil((endAt-Date.now())/1000));
+  if(l!==left){left=l;setRing();if(left===5)beep(520,90)}
+  if(left<=0){stopTimer();pause();beep(880,500);if(navigator.vibrate)navigator.vibrate([200,100,200])}
+}
+function runTimer(){stopTest();endAt=Date.now()+dur*1000;left=dur;setRing();$('timer').textContent='Parar';clearInterval(timer);timer=setInterval(tick,250)}
+async function playCurrent(){
+  const cur=played[played.length-1];if(!cur||busy)return;
+  busy=true;$('timer').disabled=true;$('timer').textContent='Conectando…';
+  keepAwake();
+  const ok=await play(cur);
+  busy=false;$('timer').disabled=false;
+  if(ok){beep(660,120);runTimer()} else stopTimer();
+}
+$('timer').onclick=()=>{if(timer){stopTimer();pause();left=dur;setRing()}else playCurrent()};
+
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(timer)tick();if(timer||tok)keepAwake()}});
+
+/* ---------- Partida ---------- */
+function lines(n){const c=CARDS[n];return [0,1,2].map(r=>c.slice(r*3,r*3+3))}
+function hasLine(n){return lines(n).some(r=>r.every(x=>played.includes(x)))}
+function hasBingo(n){return CARDS[n].every(x=>played.includes(x))}
+function save(){store.set('played',played);store.set('starts',starts);store.set('dur',dur)}
+
+function renderConn(){
+  $('dot').classList.toggle('on',!!tok);
+  $('login').hidden=!!tok;$('findDev').hidden=!tok;$('logout').hidden=!tok;
+  $('connTxt').innerHTML=tok?`Conectado a Spotify<small>${devName?'Suena en: '+esc(devName)+(devId?'':' (no aparece ahora)'):'Elige en qué móvil suena'}</small>`:'Sin conectar a Spotify<small>Hace falta para que suene y se pare sola</small>';
+}
+function render(){
+  const cur=played[played.length-1];
+  $('count').textContent=`${played.length} de ${SONGS.length}`;
+  if(cur){const s=song(cur);
+    $('now').innerHTML=`<div class="t">${esc(s.t)}</div><div class="a">${esc(s.a)}</div><div class="st">Desde <strong>${startOf(cur)}</strong>${uris[cur]?'':' · sin enlazar'}</div>`;
+  } else $('now').innerHTML='<div class="t">Aún no ha sonado nada</div><div class="a">La primera canción sale al azar.</div>';
+  if(!busy)$('timer').disabled=!cur;
+  $('undo').disabled=!cur;$('next').disabled=played.length>=SONGS.length;
+  $('played').innerHTML=played.length?played.map((t,i)=>`<li><span>${i+1}</span>${esc(t)}</li>`).join(''):'<li>Ninguna todavía</li>';
+  const L=Object.keys(CARDS).filter(hasLine),B=Object.keys(CARDS).filter(hasBingo);
+  $('alerts').innerHTML=B.length?`<div class="alert">Ya tienen bingo: papeleta ${B.join(', ')}</div>`:L.length?`<div class="alert">Ya tienen línea: papeleta ${L.join(', ')}</div>`:'';
+  $('durv').textContent=dur+' s';$('dur').value=dur;
+  if(!timer){left=dur;setRing()}
+}
+
+$('next').onclick=()=>{
+  if(busy)return;
+  const rest=SONGS.map(s=>s.t).filter(t=>!played.includes(t));if(!rest.length)return;
+  stopTimer();played.push(rest[Math.floor(Math.random()*rest.length)]);save();render();$('result').innerHTML='';
+  playCurrent();
+};
+$('undo').onclick=()=>{stopTimer();pause();played.pop();save();render();say('msg','')};
+$('dur').oninput=e=>{dur=Math.min(30,Math.max(10,+e.target.value));save();if(!timer){left=dur;setRing()}$('durv').textContent=dur+' s'};
+$('reset').onclick=()=>{if(confirm('¿Empezar una partida nueva? Se borran las canciones que han sonado.')){stopTimer();pause();played=[];save();render();$('result').innerHTML='';say('msg','')}};
+$('login').onclick=login;
+$('logout').onclick=()=>{if(confirm('¿Desconectar Spotify en este móvil?'))logout()};
+$('findDev').onclick=()=>showPicker();
+
+/* ---------- Comprobar papeleta ---------- */
+function check(mode){
+  const n=String(parseInt($('num').value,10));
+  if(!CARDS[n]){$('result').innerHTML='<div class="verdict no">Escribe un número de papeleta del 1 al 25.</div>';return}
+  const c=CARDS[n],winRows=lines(n).map((r,i)=>r.every(x=>played.includes(x))?i:-1).filter(i=>i>=0);
+  const ok=mode==='line'?winRows.length>0:hasBingo(n);
+  const miss=c.filter(x=>!played.includes(x));
+  const grid=c.map((x,i)=>{const on=played.includes(x);const win=mode==='line'&&winRows.includes(Math.floor(i/3))||mode==='bingo'&&ok;
+    return `<div class="cell${on?' on':''}${win?' win':''}">${esc(x)}</div>`}).join('');
+  const txt=ok?(mode==='line'?'Línea correcta':'¡Bingo correcto!'):(mode==='line'?'No hay línea':'No hay bingo');
+  const sub=ok?'':(mode==='line'?'<small>Ninguna fila está completa todavía.</small>':`<small>Le falta${miss.length>1?'n':''}: ${esc(miss.join(', '))}</small>`);
+  $('result').innerHTML=`<div class="grid">${grid}</div><div class="verdict ${ok?'ok':'no'}">Papeleta ${n}: ${txt}${sub}</div>`;
+}
+$('chkLine').onclick=()=>check('line');$('chkBingo').onclick=()=>check('bingo');
+$('num').onkeydown=e=>{if(e.key==='Enter')check('bingo')};
+
+/* ---------- Preparar canciones ---------- */
+let found={}; // título -> resultados de búsqueda
+function renderList(){
+  $('list').innerHTML=SONGS.map((s,i)=>{
+    const u=uris[s.t],opts=found[s.t];
+    const sel=opts&&opts.length?`<select data-i="${i}" aria-label="Versión de ${esc(s.t)}">${opts.map(o=>`<option value="${esc(o.u)}"${u&&u.u===o.u?' selected':''}>${esc(o.n)}</option>`).join('')}</select>`:'';
+    return `<div class="item"><div class="nm">${esc(s.t)}<small class="${u?'':'miss'}">${u?esc(u.n):'Sin enlazar'}</small></div>
+      <input data-i="${i}" value="${startOf(s.t)}" inputmode="numeric" aria-label="Inicio de ${esc(s.t)}">
+      <button data-play="${i}" aria-label="Probar ${esc(s.t)}"${u?'':' disabled'}>${testing===s.t?'■':'▶'}</button>${sel}</div>`}).join('');
+}
+async function search(s){
+  const artist=s.a.split(/,|&| y /)[0].trim();
+  const q=`track:${s.t} artist:${artist}`;
+  const r=await api('GET','/search?'+new URLSearchParams({q,type:'track',market:'ES',limit:'10'}));
+  if(!r.ok)return [];
+  const j=await r.json();
+  return (j.tracks&&j.tracks.items||[]).map(t=>({u:t.uri,n:`${t.name} — ${t.artists.map(a=>a.name).join(', ')} (${t.album.name})`}));
+}
+$('searchAll').onclick=async()=>{
+  if(!tok){say('setupMsg','Conecta primero con Spotify.',1);return}
+  const todo=SONGS.filter(s=>!uris[s.t]);
+  $('searchAll').disabled=true;
+  const list=todo.length?todo:SONGS;
+  let n=0;
+  for(const s of list){
+    say('setupMsg',`Buscando ${++n} de ${list.length}…`);
+    try{found[s.t]=await search(s);if(found[s.t][0]&&!uris[s.t])uris[s.t]=found[s.t][0]}catch(e){break}
+    await sleep(250);
+  }
+  store.set('uris',uris);$('searchAll').disabled=false;
+  const miss=SONGS.filter(s=>!uris[s.t]).map(s=>s.t);
+  say('setupMsg',miss.length?'Sin resultado: '+esc(miss.join(', ')):'Hecho. Revisa que cada versión sea la buena (desplegable) y pruébalas con ▶.',!!miss.length);
+  renderList();render();
+};
+$('copy').onclick=async()=>{
+  const out={};SONGS.forEach(s=>{if(uris[s.t])out[s.t]={u:uris[s.t].u,n:uris[s.t].n,s:startOf(s.t)}});
+  const txt=JSON.stringify(out,null,1);
+  try{await navigator.clipboard.writeText(txt);say('setupMsg','Copiado. Pégamelo en el chat y lo dejo fijo en el código.')}
+  catch(e){$('setupMsg').innerHTML='<pre>'+esc(txt)+'</pre>'}
+};
+$('list').addEventListener('input',e=>{
+  const i=e.target.dataset.i;if(i==null)return;const s=SONGS[i];
+  if(e.target.tagName==='SELECT'){const o=found[s.t].find(o=>o.u===e.target.value);uris[s.t]=o;store.set('uris',uris);renderList();render();return}
+  const v=e.target.value.trim();if(/^\d{1,2}:\d{2}$/.test(v)){starts[s.t]=v;save();render()}
+});
+let testTimer=null;
+function stopTest(){if(testing){clearTimeout(testTimer);testing=null;renderList()}}
+$('list').addEventListener('click',async e=>{
+  const i=e.target.dataset.play;if(i==null)return;const s=SONGS[i];
+  if(testing===s.t){stopTest();pause();return}
+  stopTimer();stopTest();keepAwake();
+  e.target.disabled=true;
+  const ok=await play(s.t);
+  if(!ok){say('setupMsg',$('msg').textContent,1);say('msg','');renderList();return}
+  testing=s.t;renderList();
+  testTimer=setTimeout(()=>{testing=null;pause();renderList()},TEST_SECS*1000);
+});
+
+/* ---------- Modo app (funciona aunque el servidor no responda) ---------- */
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
+  navigator.serviceWorker.register('sw.js').then(()=>{$('ver').textContent='Versión 4 · guardada para usar sin servidor'}).catch(()=>{});
+}
+
+/* ---------- Arranque ---------- */
+(async()=>{
+  await handleRedirect();
+  renderConn();render();renderList();
+  if(tok)findDevice();
+})();
+</script>
+</body>
+</html>
